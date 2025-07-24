@@ -27,25 +27,23 @@ class PinballGame {
 
 
 
-
-
-
-
-
-        this.flipperRestAngle = -Math.PI / 6;         // -30deg, left flipper at rest slants up-right
-        this.flipperActiveAngle = -Math.PI / 2.2;     // ~-81.8deg, flips further out
+        this.flipperRestAngleLeft = Math.PI / 6;            // 30deg (down-right at rest)
+        this.flipperActiveAngleLeft = -Math.PI / 4;         // -45deg (up-right when pressed)
+        this.flipperRestAngleRight = Math.PI - Math.PI / 6; // 150deg (down-left at rest)
+        this.flipperActiveAngleRight = Math.PI + Math.PI / 4; // 225deg (up-left when pressed)
 
         this.flipperSpeed = 0.22;
+
         this.leftFlipper = {
             x: 110,
             y: this.height - 90,
-            angle: this.flipperRestAngle,
+            angle: this.flipperRestAngleLeft,
             pressed: false
         };
         this.rightFlipper = {
             x: this.width - 110,
             y: this.height - 90,
-            angle: Math.PI - this.flipperRestAngle, // mirror left rest angle
+            angle: this.flipperRestAngleRight,
             pressed: false
         };
 
@@ -179,11 +177,11 @@ class PinballGame {
     updateFlipper(flipper, side) {
         let restAngle, activeAngle;
         if (side === 'left') {
-            restAngle = this.flipperRestAngle;
-            activeAngle = this.flipperActiveAngle;
+            restAngle = this.flipperRestAngleLeft;
+            activeAngle = this.flipperActiveAngleLeft;
         } else {
-            restAngle = Math.PI - this.flipperRestAngle;
-            activeAngle = Math.PI - this.flipperActiveAngle;
+            restAngle = this.flipperRestAngleRight;
+            activeAngle = this.flipperActiveAngleRight;
         }
         let target = flipper.pressed ? activeAngle : restAngle;
         if (Math.abs(flipper.angle - target) > 0.01) {
@@ -240,7 +238,6 @@ class PinballGame {
     }
 
     handleFlipperCollision(flipper, side) {
-
         let fx = flipper.x;
         let fy = flipper.y;
         let angle = flipper.angle;
@@ -261,7 +258,7 @@ class PinballGame {
 
             let nx = (cx-px)/dist, ny = (cy-py)/dist;
 
-            let dir = (side === 'left') ? -1 : 1;
+            let dir = (side === 'left') ? 1 : -1;
             let flipperVel = (flipper.pressed ? dir*6 : 0);
             let dot = this.ball.vx*nx + this.ball.vy*ny;
             this.ball.vx -= 2*dot*nx;
@@ -299,10 +296,93 @@ class PinballGame {
         }
     }
 
+    drawForestBackground(ctx) {
+
+        let skyGrad = ctx.createLinearGradient(0, 0, 0, this.height);
+        skyGrad.addColorStop(0, "#c8e6df");
+        skyGrad.addColorStop(0.3, "#b6e2c8");
+        skyGrad.addColorStop(1, "#7ec87e");
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        const distantTreeColors = ["#a2b77a", "#8ea65f"];
+        for (let layer = 0; layer < 2; layer++) {
+            let treeBase = 470 + layer * 40;
+            for (let x = -30; x < this.width + 40; x += 55 + 15 * layer) {
+                let baseY = treeBase + Math.random() * 12 * (layer+1);
+                ctx.save();
+                ctx.globalAlpha = 0.25 + 0.09 * layer;
+                ctx.fillStyle = distantTreeColors[layer];
+
+                ctx.beginPath();
+                ctx.moveTo(x, baseY);
+                ctx.lineTo(x + 28 + 8 * layer, baseY);
+                ctx.lineTo(x + 14 + 4 * layer, baseY - 55 - 13 * layer);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        for (let x = 18; x < this.width; x += 60) {
+            let baseY = 525 + 16 * Math.sin(x/80);
+            ctx.save();
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = "#5b7b44";
+            ctx.beginPath();
+            ctx.ellipse(x, baseY, 28, 17, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = "#7d5e39";
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            ctx.moveTo(x, baseY+12);
+            ctx.lineTo(x, baseY+32);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        for (let x = 30; x < this.width; x += 100) {
+            let baseY = 600 + 8 * Math.sin(x/40);
+
+            ctx.save();
+            ctx.globalAlpha = 0.8;
+            ctx.strokeStyle = "#6e4e2c";
+            ctx.lineWidth = 13;
+            ctx.beginPath();
+            ctx.moveTo(x, baseY + 26);
+            ctx.lineTo(x, baseY - 24);
+            ctx.stroke();
+            ctx.restore();
+
+            ctx.save();
+            ctx.globalAlpha = 0.86;
+            ctx.fillStyle = "#367d3b";
+            ctx.beginPath();
+            ctx.ellipse(x, baseY - 22, 34, 19, 0, 0, Math.PI * 2);
+            ctx.ellipse(x - 18, baseY - 7, 17, 13, 0, 0, Math.PI * 2);
+            ctx.ellipse(x + 15, baseY - 11, 19, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        for (let x = 0; x < this.width; x += 30) {
+            let y = 670 + 10 * Math.sin(x / 20);
+            ctx.save();
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = "#225b26";
+            ctx.beginPath();
+            ctx.ellipse(x, y, 14, 7, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+    }
+
+
     draw() {
         let ctx = this.ctx;
 
-        ctx.clearRect(0, 0, this.width, this.height);
+        this.drawForestBackground(ctx);
 
         ctx.save();
         ctx.fillStyle = '#19326a';
@@ -316,7 +396,9 @@ class PinballGame {
         ctx.lineTo(this.width-60, 500);
         ctx.lineTo(this.width-this.wallPadding, this.height-60);
         ctx.closePath();
+        ctx.globalAlpha = 0.80; // slightly see-through to forest
         ctx.fill();
+        ctx.globalAlpha = 1;
         ctx.stroke();
         ctx.restore();
 
